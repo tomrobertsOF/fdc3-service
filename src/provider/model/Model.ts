@@ -136,13 +136,23 @@ export class Model {
         const [pendingRegistration, resolvePending] = deferredPromise();
         this._pendingRegistrations.set(getId(identity), pendingRegistration);
 
-        const apps = await this._directory.getAllApps();
-        const appInfoFromDirectory = apps.find(app => app.manifest.startsWith(manifestUrl));
+        let appInfo: Application | undefined;
+        const existingAppWindows = this.findWindows(win => win.identity.uuid === identity.uuid);
+        if (existingAppWindows.length > 0) {
+            console.log('App already has running windows, using cached appInfo for new window');
+            // App already has running windows, use cached appInfo for new window
+            appInfo = existingAppWindows[0].appInfo;
+        } else {
+            console.log('No other registered windows for the app, querying the directory to get appInfo');
+            // No other registered windows for the app, query the directory to get appInfo
+            const apps = await this._directory.getAllApps();
+            appInfo = apps.find(app => app.manifest.startsWith(manifestUrl));
+        }
 
         const id: string = getId(identity);
         // If the app is not in directory we ignore it. We'll add it to the model if and when it connects to FDC3
-        if (appInfoFromDirectory && !this._windowsById[id]) {
-            this.registerWindow(appInfoFromDirectory, identity, true);
+        if (appInfo && !this._windowsById[id]) {
+            this.registerWindow(appInfo, identity, true);
         } else if (this._windowsById[id]) {
             console.info(`Ignoring window created event for ${id} - window was already registered`);
         }
