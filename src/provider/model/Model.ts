@@ -136,24 +136,24 @@ export class Model {
         const [pendingRegistration, resolvePending] = deferredPromise();
         this._pendingRegistrations.set(getId(identity), pendingRegistration);
 
-        let appInfo: Application | undefined;
-        const existingAppWindows = this.findWindows(win => win.identity.uuid === identity.uuid);
-        if (existingAppWindows.length > 0) {
-            console.log('App already has running windows, using cached appInfo for new window');
-            // App already has running windows, use cached appInfo for new window
-            appInfo = existingAppWindows[0].appInfo;
-        } else {
-            console.log('No other registered windows for the app, querying the directory to get appInfo');
-            // No other registered windows for the app, query the directory to get appInfo
-            const apps = await this._directory.getAllApps();
-            appInfo = apps.find(app => app.manifest.startsWith(manifestUrl));
-        }
-
         const id: string = getId(identity);
-        // If the app is not in directory we ignore it. We'll add it to the model if and when it connects to FDC3
-        if (appInfo && !this._windowsById[id]) {
-            this.registerWindow(appInfo, identity, true);
-        } else if (this._windowsById[id]) {
+        if (!this._windowsById[id]) {
+            const existingAppWindows = this.findWindows(win => win.identity.uuid === identity.uuid);
+            if (existingAppWindows.length > 0) {
+                console.log('App already has running windows, using cached appInfo for new window');
+                // App already has running windows, use cached appInfo for new window
+                this.registerWindow(existingAppWindows[0].appInfo, identity, true);
+            } else {
+                console.log('No other registered windows for the app, querying the directory to get appInfo');
+                // No other registered windows for the app, query the directory to get appInfo
+                const apps = await this._directory.getAllApps();
+                const appInfo = apps.find(app => app.manifest.startsWith(manifestUrl));
+                // If the app is not in directory we ignore it. We'll add it to the model if and when it connects to FDC3
+                if (appInfo) {
+                    this.registerWindow(appInfo, identity, true);
+                }
+            }
+        } else {
             console.info(`Ignoring window created event for ${id} - window was already registered`);
         }
 
