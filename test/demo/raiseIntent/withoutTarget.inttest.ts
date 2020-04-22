@@ -451,7 +451,7 @@ async function selectResolverAppAndExpectResolverToClose(app: TestAppData): Prom
  * Selects an app on the resolver by remotely clicking on its button
  */
 async function selectResolverApp(app: TestAppData): Promise<void> {
-    const appClicked = await fdc3Remote.clickHTMLElement(RESOLVER_IDENTITY, `.app-card[data-appname="${app.name}"]`);
+    const appClicked = await fdc3Remote.clickHTMLElement(RESOLVER_IDENTITY, `[id^="app-card"][data-appname="${app.name}"]`);
     if (!appClicked) {
         throw new Error(`App with name '${app.name}' not found in resolver`);
     }

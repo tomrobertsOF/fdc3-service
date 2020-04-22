@@ -6,7 +6,7 @@
 
     .header {
         height: 28px;
-        background: #3A3A3A;
+        background: var(--color-background-light);
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -17,17 +17,17 @@
             text-transform: capitalize;
         }
 
-        #exit {
+        .exit {
             height: 20px;
             width: 20px;
             margin-right: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-        cursor: pointer;
+            cursor: pointer;
 
             &:hover {
-                background-color: #313131;
+                background-color: var(--color-background-medium);
                 border-radius: 10px;
             }
 
@@ -38,26 +38,26 @@
         }
     }
 
-    #cancel {
-        background: #313131;
+    .cancel {
+        background: var(--color-background-medium);
         height: 42px;
-        border-top: 1px solid #494848;
+        border-top: 1px solid var(--color-blurred);
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
 
         &:hover {
-            color: #A3A0A0;
-            background: #494848;
+            color: var(--text-secondary-color);
+            background: var(--color-blurred);
 
             h1 {
-                color: white;
+                color: var(--color-foreground);
             }
         }
 
         h1 {
-            color: #A3A0A0;
+            color: var(--text-secondary-color);
             font-size: 16px;
         }
     }

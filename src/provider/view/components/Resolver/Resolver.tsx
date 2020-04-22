@@ -1,11 +1,13 @@
 import * as React from 'react';
+import {ThemeProvider} from '@openfin/desktop-ui';
 
 import {Application} from '../../../../client/directory';
 import {ResolverArgs, ResolverResult} from '../../../controller/ResolverHandler';
 import {AppList} from '../AppList/AppList';
 
+import * as Styles from './Resolver.module.scss';
 import '../../styles/_main.scss';
-import './Resolver.scss';
+import '@openfin/desktop-ui/ui-styles.css';
 
 let sendSuccess: (result: {app: Application}) => void;
 
@@ -35,18 +37,20 @@ export function Resolver(): React.ReactElement {
     }, []);
 
     return (
-        <div className="container">
-            <div className="header">
-                <h1>{intent}</h1>
-                <div id="exit" onClick={handleCancel}>
-                    <img src="assets/exit.png" />
+        <ThemeProvider>
+            <div className={Styles['container']}>
+                <div className={Styles['header']}>
+                    <h1>{intent}</h1>
+                    <div className={Styles['exit']} id="exit" onClick={handleCancel}>
+                        <img src="assets/exit.png" />
+                    </div>
+                </div>
+                <AppList applications={applications} onAppOpen={handleAppOpen} />
+                <div className={Styles['cancel']} id="cancel" onClick={handleCancel}>
+                    <h1>Cancel</h1>
                 </div>
             </div>
-            <AppList applications={applications} onAppOpen={handleAppOpen} />
-            <div id="cancel" onClick={handleCancel}>
-                <h1>Cancel</h1>
-            </div>
-        </div>
+        </ThemeProvider>
     );
 }
 
