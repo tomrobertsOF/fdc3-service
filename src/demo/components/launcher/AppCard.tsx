@@ -19,7 +19,7 @@ export function AppCard(props: AppCardProps): React.ReactElement {
     };
     const viewData = (app.type === 'manifest')
         ? {
-            title: app.data.title || app.data.appId,
+            title: (app.data.title || app.data.appId),
             description: app.data.description || '',
             icon: (app.data.icons && app.data.icons[0] && app.data.icons[0].icon) || '',
             className: isDirectoryApp ? 'w3-blue-gray' : 'w3-light-blue'

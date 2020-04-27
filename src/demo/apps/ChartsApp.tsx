@@ -9,9 +9,11 @@ import '../../../res/demo/css/w3.css';
 
 interface AppProps {
     symbolName?: string;
+    color?: string;
 }
 
 export function ChartsApp(props: AppProps): React.ReactElement {
+    const {color = ''} = props;
     const [title, setTitle] = React.useState('Apple (AAPL)');
 
     function handleIntent(context: InstrumentContext): void {
@@ -27,7 +29,11 @@ export function ChartsApp(props: AppProps): React.ReactElement {
     }
 
     React.useEffect(() => {
-        document.title = 'Charts';
+        let displayColor = color;
+        if (displayColor) {
+            displayColor = displayColor[0].toUpperCase() + displayColor.slice(1);
+        }
+        document.title = `Charts: ${displayColor}`;
     }, []);
 
     React.useEffect(() => {

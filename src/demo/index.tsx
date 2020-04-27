@@ -22,32 +22,26 @@ import {NewsApp} from './apps/NewsApp';
  */
 
 function App(): React.ReactElement {
-    // Note that we require demo app UUIDs to follow a 'fdc3-$NAME[-$COLOUR][-nodir|-programmatic]' convention
-    const {uuid} = fin.Window.me;
-    let appToken = uuid.replace('fdc3-', '').replace('-nodir', '').replace('-programmatic', '');
-
-    let color = 'blue-grey';
-    const regexResult = /-(red|green|blue|grey|pink|teal|orange|cyan|purple)/.exec(uuid);
-    if (regexResult && regexResult.length > 1) {
-        color = regexResult[1];
-        appToken = appToken.replace(`-${color}`, '');
-    }
+    const urlParams = new URLSearchParams(window.location.search);
+    const appToken = urlParams.get('app')?.toLowerCase();
+    const color = urlParams.get('color')?.toLowerCase() || 'blue-grey';
     const cssURL = `https://www.w3schools.com/lib/w3-theme-${color}.css`;
 
     return (
         <React.Fragment>
             <link rel="stylesheet" type="text/css" href={cssURL} />
-            <SelectApp appToken={appToken} />
+            <SelectApp appToken={appToken} color={color} />
         </React.Fragment>
     );
 }
 
 interface SelectAppProps {
-    appToken: string;
+    appToken?: string;
+    color?: string;
 }
 
 function SelectApp(props: SelectAppProps): React.ReactElement {
-    const {appToken} = props;
+    const {appToken, color} = props;
     let selectedApp: JSX.Element;
 
     switch (appToken) {
@@ -58,7 +52,7 @@ function SelectApp(props: SelectAppProps): React.ReactElement {
             selectedApp = <BlotterApp />;
             break;
         case 'charts':
-            selectedApp = <ChartsApp />;
+            selectedApp = <ChartsApp color={color} />;
             break;
         case 'contacts':
             selectedApp = <ContactsApp />;

@@ -31,7 +31,7 @@ declare const PACKAGE_VERSION: string;
  * The event emitter to emit events received from the service.  All addEventListeners will tap into this.
  */
 export const eventEmitter = new EventEmitter();
-let eventRouter: EventRouter<Events>|null;
+let eventRouter: EventRouter<Events> | null;
 
 export function getEventRouter(): EventRouter<Events> {
     if (!eventRouter) {
@@ -71,8 +71,9 @@ export async function getServicePromise(): Promise<ChannelClient> {
                     setServiceIdentity(info.fdc3AppUuid);
                     setServiceChannel(info.fdc3ChannelName);
                 }
-
-                if (fin.Window.me.uuid === getServiceIdentity().uuid && fin.Window.me.name === getServiceIdentity().name) {
+                // @ts-ignore fin.me has no type def
+                const {name, uuid} = fin.me?.identity ?? fin.Window.me;
+                if (uuid === getServiceIdentity().uuid && name === getServiceIdentity().name) {
                     reject(new Error('Trying to connect to provider from provider'));
                 } else {
                     let channel: ChannelClient | null = null;

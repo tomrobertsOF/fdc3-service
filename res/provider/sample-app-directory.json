@@ -1,143 +1,169 @@
-[{
-    "appId": "fdc3-blotter",
-    "name": "fdc3-blotter",
-    "manifest": "http://localhost:3923/demo/configs/app-blotter.json",
-    "manifestType": "openfin",
-    "title": "Blotter",
-    "description": "Sample blotter app",
-    "images": [],
-    "contactEmail": "support@openfin.co",
-    "supportEmail": "support@openfin.co",
-    "publisher": "openfin",
-    "icons": [
-        {"icon": "http://localhost:3923/demo/img/app-icons/blotter.svg"}
-    ],
-    "intents": []
-},
-{
-    "appId": "fdc3-contacts",
-    "name": "fdc3-contacts",
-    "manifest": "http://localhost:3923/demo/configs/app-contacts.json",
-    "manifestType": "openfin",
-    "title": "Contacts",
-    "description": "Sample contacts app",
-    "images": [],
-    "contactEmail": "support@openfin.co",
-    "supportEmail": "support@openfin.co",
-    "publisher": "openfin",
-    "icons": [
-        {"icon": "http://localhost:3923/demo/img/app-icons/contacts.svg"}
-    ],
-    "intents": [
-        {
-            "name": "SaveContact",
-            "contexts": ["fdc3.contact"],
-            "displayName": "Save"
-        }
-    ]
-},
-{
-    "appId": "dialer",
-    "name": "dialer",
-    "manifest": "http://localhost:3923/demo/configs/app-dialer.json",
-    "manifestType": "openfin",
-    "title": "Dialer",
-    "description": "Sample dialer app",
-    "images": [],
-    "contactEmail": "support@openfin.co",
-    "supportEmail": "support@openfin.co",
-    "publisher": "openfin",
-    "icons": [
-        {"icon": "http://localhost:3923/demo/img/app-icons/dialer.svg"}
-    ],
-    "customConfig": [
-        {
-            "name": "appUuid",
-            "value": "fdc3-dialer"
-        }
-    ],
-    "intents": [
-        {
-            "name": "StartCall",
-            "displayName": "Call",
-            "contexts": ["fdc3.contact"],
-            "customConfig": {
-                "icon": "fa-phone"
+[
+    {
+        "appId": "fdc3-blotter",
+        "name": "fdc3-blotter",
+        "manifest": "http://localhost:3923/demo/blotter/config.json",
+        "manifestType": "openfin",
+        "title": "Blotter",
+        "description": "Sample blotter app",
+        "images": [],
+        "contactEmail": "support@openfin.co",
+        "supportEmail": "support@openfin.co",
+        "publisher": "openfin",
+        "icons": [
+            {
+                "icon": "http://localhost:3923/demo/img/app-icons/blotter.svg"
             }
-        },
-        {
-            "name": "DialCall",
-            "displayName": "Dial",
-            "contexts": ["fdc3.contact"],
-            "customConfig": {
-                "icon": "fa-tty"
+        ],
+        "intents": []
+    },
+    {
+        "appId": "fdc3-contacts",
+        "name": "fdc3-contacts",
+        "manifest": "http://localhost:3923/demo/contacts/config.json",
+        "manifestType": "openfin",
+        "title": "Contacts",
+        "description": "Sample contacts app",
+        "images": [],
+        "contactEmail": "support@openfin.co",
+        "supportEmail": "support@openfin.co",
+        "publisher": "openfin",
+        "icons": [
+            {
+                "icon": "http://localhost:3923/demo/img/app-icons/contacts.svg"
             }
-        }
-    ]
-},
-{
-    "appId": "fdc3-charts-red",
-    "name": "fdc3-charts-red",
-    "manifest": "http://localhost:3923/demo/configs/app-charts-red.json",
-    "manifestType": "openfin",
-    "title": "Charts: Red",
-    "description": "A charting app",
-    "images": [],
-    "contactEmail": "support@openfin.co",
-    "supportEmail": "support@openfin.co",
-    "publisher": "openfin",
-    "icons": [
-        {"icon": "http://localhost:3923/demo/img/app-icons/charts.svg"}
-    ],
-    "intents": [
-        {
-            "name": "ViewChart",
-            "contexts": ["fdc3.instrument"],
-            "displayName": "View Chart"
-        }
-    ]
-},
-{
-    "appId": "fdc3-charts-green",
-    "name": "fdc3-charts-green",
-    "manifest": "http://localhost:3923/demo/configs/app-charts-green.json",
-    "manifestType": "openfin",
-    "title": "Charts: Green",
-    "description": "Another charting app",
-    "images": [],
-    "contactEmail": "support@openfin.co",
-    "supportEmail": "support@openfin.co",
-    "publisher": "openfin",
-    "icons": [
-        {"icon": "http://localhost:3923/demo/img/app-icons/charts.svg"}
-    ],
-    "intents": [
-        {
-            "name": "ViewChart",
-            "contexts": ["fdc3.instrument"],
-            "displayName": "View Chart"
-        }
-    ]
-},
-{
-    "appId": "fdc3-charts-blue",
-    "name": "fdc3-charts-blue",
-    "manifest": "http://localhost:3923/demo/configs/app-charts-blue.json",
-    "manifestType": "openfin",
-    "title": "Charts: Blue",
-    "description": "Another charting app",
-    "images": [],
-    "contactEmail": "support@openfin.co",
-    "supportEmail": "support@openfin.co",
-    "publisher": "openfin",
-    "icons": [
-        {"icon": "http://localhost:3923/demo/img/app-icons/charts.svg"}
-    ],
-    "intents": [
-        {
-            "name": "ViewChart",
-            "contexts": ["fdc3.instrument"],
-            "displayName": "View Chart"
-        }
-    ]
-}]
+        ],
+        "intents": [
+            {
+                "name": "SaveContact",
+                "contexts": [
+                    "fdc3.contact"
+                ],
+                "displayName": "Save"
+            }
+        ]
+    },
+    {
+        "appId": "dialer",
+        "name": "dialer",
+        "manifest": "http://localhost:3923/demo/dialer/config.json",
+        "manifestType": "openfin",
+        "title": "Dialer",
+        "description": "Sample dialer app",
+        "images": [],
+        "contactEmail": "support@openfin.co",
+        "supportEmail": "support@openfin.co",
+        "publisher": "openfin",
+        "icons": [
+            {
+                "icon": "http://localhost:3923/demo/img/app-icons/dialer.svg"
+            }
+        ],
+        "customConfig": [
+            {
+                "name": "appUuid",
+                "value": "fdc3-dialer"
+            }
+        ],
+        "intents": [
+            {
+                "name": "StartCall",
+                "displayName": "Call",
+                "contexts": [
+                    "fdc3.contact"
+                ],
+                "customConfig": {
+                    "icon": "fa-phone"
+                }
+            },
+            {
+                "name": "DialCall",
+                "displayName": "Dial",
+                "contexts": [
+                    "fdc3.contact"
+                ],
+                "customConfig": {
+                    "icon": "fa-tty"
+                }
+            }
+        ]
+    },
+    {
+        "appId": "fdc3-charts-red",
+        "name": "fdc3-charts-red",
+        "manifest": "http://localhost:3923/demo/charts/red/config.json",
+        "manifestType": "openfin",
+        "title": "Charts: Red",
+        "description": "A charting app",
+        "images": [],
+        "contactEmail": "support@openfin.co",
+        "supportEmail": "support@openfin.co",
+        "publisher": "openfin",
+        "icons": [
+            {
+                "icon": "http://localhost:3923/demo/img/app-icons/charts.svg"
+            }
+        ],
+        "intents": [
+            {
+                "name": "ViewChart",
+                "contexts": [
+                    "fdc3.instrument"
+                ],
+                "displayName": "View Chart"
+            }
+        ]
+    },
+    {
+        "appId": "fdc3-charts-green",
+        "name": "fdc3-charts-green",
+        "manifest": "http://localhost:3923/demo/charts/green/config.json",
+        "manifestType": "openfin",
+        "title": "Charts: Green",
+        "description": "Another charting app",
+        "images": [],
+        "contactEmail": "support@openfin.co",
+        "supportEmail": "support@openfin.co",
+        "publisher": "openfin",
+        "icons": [
+            {
+                "icon": "http://localhost:3923/demo/img/app-icons/charts.svg"
+            }
+        ],
+        "intents": [
+            {
+                "name": "ViewChart",
+                "contexts": [
+                    "fdc3.instrument"
+                ],
+                "displayName": "View Chart"
+            }
+        ]
+    },
+    {
+        "appId": "fdc3-charts-blue",
+        "name": "fdc3-charts-blue",
+        "manifest": "http://localhost:3923/demo/charts/blue/config.json",
+        "manifestType": "openfin",
+        "title": "Charts: Blue",
+        "description": "Another charting app",
+        "images": [],
+        "contactEmail": "support@openfin.co",
+        "supportEmail": "support@openfin.co",
+        "publisher": "openfin",
+        "icons": [
+            {
+                "icon": "http://localhost:3923/demo/img/app-icons/charts.svg"
+            }
+        ],
+        "intents": [
+            {
+                "name": "ViewChart",
+                "contexts": [
+                    "fdc3.instrument"
+                ],
+                "displayName": "View Chart"
+            }
+        ]
+    }
+]

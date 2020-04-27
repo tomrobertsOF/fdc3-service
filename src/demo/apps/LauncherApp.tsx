@@ -21,14 +21,17 @@ interface AppData {
     id: string;
     icon: string;
     title: string;
+    color?: string;
     description: string;
     extraOptions?: {resizable: boolean; defaultWidth: number; defaultHeight: number; saveWindowState: boolean};
 }
 
 export type AppLaunchData = ManifestAppLaunchData | ProgrammaticAppLaunchData;
 
-export function LauncherApp(): React.ReactElement {
+export const LauncherApp: React.FC = () => {
     const [applications, setApplications] = React.useState<ManifestAppLaunchData[]>([]);
+    // @ts-ignore fin.me types do not exist
+    const isPlatformWindow = fin.me ? fin.me.isView : false;
 
     React.useEffect(() => {
         document.title = 'Launcher';
@@ -70,6 +73,8 @@ export function LauncherApp(): React.ReactElement {
             try {
                 if (app.type === 'manifest') {
                     await fin.Application.startFromManifest(app.data.manifest);
+                } else if (isPlatformWindow) {
+                    await createPlatformWindow(app);
                 } else {
                     await fin.Application.start(app.data);
                 }
@@ -97,54 +102,87 @@ export function LauncherApp(): React.ReactElement {
         <div>
             <h1>Launcher</h1>
             {applications.map((app, index) => <AppCard key={`${app.data.appId}${index}`} app={app} handleClick={openApp} isDirectoryApp={true} />)}
-            <hr/>
+            <hr />
             <h2>Non-directory apps</h2>
             {NON_DIRECTORY_APPS.map((app, index) => <AppCard key={`${app.data.appId}${index}`} app={app} handleClick={launchApp} isDirectoryApp={false} />)}
-            <hr/>
+            <hr />
             <h2>Programmatic apps</h2>
             {PROGRAMMATIC_APPS.map((app, index) => <AppCard key={`${app.data.uuid}${index}`} app={app} handleClick={launchApp} isDirectoryApp={false} />)}
         </div>
     );
-}
+};
 
 const APP_DATA: AppData[] = [
     {id: 'blotter', icon: 'blotter', title: 'Blotter', description: 'blotter app'},
     {id: 'contacts', icon: 'contacts', title: 'Contacts', description: 'contacts app'},
-    {id: 'dialer', icon: 'dialer', title: 'Dialer', description: 'dialer app',
-        extraOptions: {resizable: false, defaultWidth: 240, defaultHeight: 310, saveWindowState: false}},
-    {id: 'charts-pink', icon: 'charts', title: 'Charts: Pink', description: 'charting app'},
-    {id: 'charts-grey', icon: 'charts', title: 'Charts: Grey', description: 'charting app'},
-    {id: 'charts-teal', icon: 'charts', title: 'Charts: Teal', description: 'charting app'},
+    {
+        id: 'dialer', icon: 'dialer', title: 'Dialer', description: 'dialer app',
+        extraOptions: {resizable: false, defaultWidth: 240, defaultHeight: 310, saveWindowState: false}
+    },
+    {id: 'charts', icon: 'charts', title: 'Charts:', color: 'Pink', description: 'charting app'},
+    {id: 'charts', icon: 'charts', title: 'Charts:', color: 'Grey', description: 'charting app'},
+    {id: 'charts', icon: 'charts', title: 'Charts:', color: 'Teal', description: 'charting app'},
     {id: 'news', icon: 'news', title: 'News Feed', description: 'news app'}
 ];
 
-const NON_DIRECTORY_APPS: ManifestAppLaunchData[] = APP_DATA.map(({id, icon, title, description}) => ({
+const NON_DIRECTORY_APPS: ManifestAppLaunchData[] = APP_DATA.map(({id, icon, title, description, color}) => ({
     type: 'manifest',
+    color,
     data: {
-        appId: `fdc3-${id}-nodir`,
-        name: `fdc3-${id}-nodir`,
+        appId: createIdentifier(title, color, 'nodir'),
+        name: createIdentifier(title, color, 'nodir'),
         manifestType: 'openfin',
-        manifest: `http://localhost:3923/demo/configs/non-directory/app-${id}-nodir.json`,
+        manifest: `http://localhost:3923/demo/${id}/${color}/config.json`,
         icons: [
             {icon: `http://localhost:3923/demo/img/app-icons/${icon}.svg`}
         ],
-        title: title || id,
+        title: `${title} ${color ?? ''}` || id,
         description: `Sample Non-Directory ${description}`
     }
 }));
 
-const PROGRAMMATIC_APPS: ProgrammaticAppLaunchData[] = APP_DATA.map(({id, icon, title, description, extraOptions}) => ({
-    type: 'programmatic',
-    data: {
-        name: title.replace('Pink', 'Orange').replace('Grey', 'Cyan').replace('Teal', 'Purple'),
-        description: `Sample Programmatic ${description}`,
-        url: 'http://localhost:3923/demo/index.html',
-        icon: `http://localhost:3923/demo/img/app-icons/${icon}.svg`,
-        uuid: `fdc3-${id.replace('pink', 'orange').replace('grey', 'cyan').replace('teal', 'purple')}-programmatic`,
-        autoShow: true,
-        resizable: extraOptions && extraOptions.resizable,
-        defaultWidth: extraOptions && extraOptions.defaultWidth,
-        defaultHeight: extraOptions && extraOptions.defaultHeight,
-        saveWindowState: extraOptions && extraOptions.saveWindowState
-    }
-}));
+const PROGRAMMATIC_APPS: ProgrammaticAppLaunchData[] = APP_DATA.map(({id, icon, title, description, extraOptions, color}) => {
+    color = (color || '').replace('Pink', 'Orange').replace('Grey', 'Cyan').replace('Teal', 'Purple');
+    return {
+        type: 'programmatic',
+        color,
+        data: {
+            name: `${title} ${color ?? ''}`,
+            description: `Sample Programmatic ${description}`,
+            url: `http://localhost:3923/demo/index.html?app=${id}&color=${color}`,
+            icon: `http://localhost:3923/demo/img/app-icons/${icon}.svg`,
+            uuid: createIdentifier(id, color, 'programmatic'),
+            autoShow: true,
+            resizable: extraOptions && extraOptions.resizable,
+            defaultWidth: extraOptions && extraOptions.defaultWidth,
+            defaultHeight: extraOptions && extraOptions.defaultHeight,
+            saveWindowState: extraOptions && extraOptions.saveWindowState
+        }
+    };
+});
+
+function createIdentifier(...args: (string | undefined)[]): string {
+    return args.filter((arg) => !!arg).join('-');
+}
+
+async function createPlatformWindow(app: ProgrammaticAppLaunchData): Promise<void> {
+    const platform = fin.Platform.getCurrentSync();
+
+    await platform.createWindow({
+        contextMenu: true,
+        // @ts-ignore Type definition doesn't exist
+        layout: {
+            content: [{
+                type: 'stack',
+                content: [{
+                    type: 'component',
+                    componentName: 'view',
+                    componentState: {
+                        name: app.data.name,
+                        url: app.data.url
+                    }
+                }]
+            }]
+        }
+    });
+}
