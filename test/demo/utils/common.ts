@@ -153,7 +153,7 @@ export function setupTeardown(): void {
  * Remotely clicks the cancel button on the resolver
  */
 export async function closeResolver(): Promise<void> {
-    const cancelClicked = await fdc3Remote.clickHTMLElement(RESOLVER_IDENTITY, '#cancel');
+    const cancelClicked = await fdc3Remote.clickHTMLElement(RESOLVER_IDENTITY, '[data-id="header-close-button"]:first-of-type');
     if (!cancelClicked) {
         throw new Error('Error clicking cancel button on resolver. Make sure it has id="cancel".');
     }

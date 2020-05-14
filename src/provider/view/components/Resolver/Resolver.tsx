@@ -1,22 +1,18 @@
 import * as React from 'react';
-import {ThemeProvider} from '@openfin/desktop-ui';
+import {Header, ListGroup, Cell, AppLogo, ListGroupItem} from '@openfin/desktop-ui';
 
 import {Application} from '../../../../client/directory';
 import {ResolverArgs, ResolverResult} from '../../../controller/ResolverHandler';
-import {AppList} from '../AppList/AppList';
+import OpenWithIcon from '../../../../../res/provider/ui/resolver/assets/OpenWithIcon.svg';
 
 import * as Styles from './Resolver.module.scss';
-import '../../styles/_main.scss';
-import '@openfin/desktop-ui/ui-styles.css';
 
 let sendSuccess: (result: {app: Application}) => void;
 
-export function Resolver(): React.ReactElement {
+export const Resolver: React.FC = () => {
     const [applications, setApplications] = React.useState<Application[]>([]);
-    const [intent, setIntent] = React.useState<string>();
-
     const handleAppOpen = (app: Application) => sendSuccess({app});
-    const handleCancel = (event: React.MouseEvent<HTMLDivElement>) => {
+    const handleClose = (event: React.MouseEvent) => {
         event.stopPropagation();
         sendSuccess(null!);
     };
@@ -27,9 +23,7 @@ export function Resolver(): React.ReactElement {
 
             channel.register('resolve', async (args: ResolverArgs) => {
                 setApplications(args.applications);
-                setIntent(`Open "${prettyPrintIntent(args.intent.type)}" with`);
-
-                return new Promise<ResolverResult>((resolve, reject) => {
+                return new Promise<ResolverResult>((resolve) => {
                     sendSuccess = resolve;
                 });
             });
@@ -37,43 +31,32 @@ export function Resolver(): React.ReactElement {
     }, []);
 
     return (
-        <ThemeProvider>
-            <div className={Styles['container']}>
-                <div className={Styles['header']}>
-                    <h1>{intent}</h1>
-                    <div className={Styles['exit']} id="exit" onClick={handleCancel}>
-                        <img src="assets/exit.png" />
-                    </div>
-                </div>
-                <AppList applications={applications} onAppOpen={handleAppOpen} />
-                <div className={Styles['cancel']} id="cancel" onClick={handleCancel}>
-                    <h1>Cancel</h1>
-                </div>
-            </div>
-        </ThemeProvider>
-    );
-}
+        <div className={Styles['resolver']}>
+            <Header text="Open with:" onClose={handleClose} image={OpenWithIcon} />
+            <ListGroup
+                ref={(node) => node?.focus()}
+                style={{outline: 'none'}}
+                border={false}
+                animationTimeout={0}
+            >
+                {
+                    applications.map((app, i) => {
+                        const icon = <AppLogo src={app.icons?.[0].icon ?? ''} />;
 
-/**
- *  - Strip-off the namespace - remove the first dot character (if there is one) and anything preceding it.
- *  - Split the resulting string into individual words. Any of the following will be taken as a word separator:
- *  - A space, hyphen or underscore character
- *  - A lowercase letter followed by an uppercase character
- *  - Capitalise the first letter of each word, with every other character being lowercase
- *
- * Some examples of the above rules:
- * - fdc3.ViewChart -> 'Open "View Chart" with'
- * - fdc3.StartChat -> 'Open "Start Chat" with'
- * - myorg.ViewChart -> 'Open "View Chart" with'
- * - myorg.START_CHAT -> 'Open "Start Chat" with'
- * - myorg.FETCH_RFQ -> 'Open "Fetch Rfq" with'
- */
-function prettyPrintIntent(intent: string) {
-    const intentWithoutNamespace = intent.includes('.') ? intent.split('.')[1] : intent;
-    return intentWithoutNamespace
-        .replace(/([A-Z]+)/g, ' $1')
-        .replace(/([A-Z][a-z])/g, ' $1')
-        .replace(/[-_]/g, ' ')
-        .trimLeft()
-        .toLowerCase();
-}
+                        return (
+                            <ListGroupItem item={app} key={app.appId + i}>
+                                <Cell
+                                    onClick={() => handleAppOpen(app)}
+                                    text={app.name}
+                                    image={icon}
+                                    id={`app-card-${app.appId}`}
+                                    data-appname={app.name}
+                                />
+                            </ListGroupItem>
+                        );
+                    })
+                }
+            </ListGroup>
+        </div>
+    );
+};

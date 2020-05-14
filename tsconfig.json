@@ -5,6 +5,7 @@
         "rootDir": "src"
     },
     "include": [
+        "node_modules/@openfin/desktop-ui/custom-types.d.ts",
         "src"
     ]
 }

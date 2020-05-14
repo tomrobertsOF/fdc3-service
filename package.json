@@ -37,7 +37,7 @@
   "homepage": "https://github.com/HadoukenIO/fdc3-service#readme",
   "dependencies": {},
   "devDependencies": {
-    "@openfin/desktop-ui": "0.0.8",
+    "@openfin/desktop-ui": "0.0.10-alpha.54",
     "@types/mkdirp": "^0.5.2",
     "@types/node-fetch": "^2.1.6",
     "@types/openfin": "^49.0.0",

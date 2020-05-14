@@ -36,6 +36,9 @@ pipeline {
                 stage('Integration Tests') {
                     agent { label 'win10-dservices' }
                     steps {
+                        withCredentials([string(credentialsId: "NPM_TOKEN_WRITE", variable: 'NPM_TOKEN')]) {
+                            bat "echo //registry.npmjs.org/:_authToken=$NPM_TOKEN > $WORKSPACE/.npmrc"
+                        }
                         bat "npm install"
                         bat "npm run test:int -- --noColor -x \"--no-cache --verbose\""
                     }
@@ -96,6 +99,9 @@ def configure() {
 }
 
 def buildProject() {
+    withCredentials([string(credentialsId: "NPM_TOKEN_WRITE", variable: 'NPM_TOKEN')]) {
+        sh "echo //registry.npmjs.org/:_authToken=$NPM_TOKEN > $WORKSPACE/.npmrc"
+    }
     sh "npm install"
     sh "npm run clean"
     sh "VERSION=${BUILD_VERSION} npm run build"

@@ -92,7 +92,7 @@ export class ResolverHandler extends AsyncInit implements ResolverHandlerBinding
             defaultCentered: true,
             frame: false,
             resizable: false,
-            defaultWidth: 242,
+            defaultWidth: 345,
             defaultHeight: 444
         };
 

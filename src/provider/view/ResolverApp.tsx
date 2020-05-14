@@ -1,6 +1,8 @@
 import * as React from 'react';
-import {render} from 'react-dom';
+import {ThemeProvider} from '@openfin/desktop-ui';
+import * as ReactDOM from 'react-dom';
 
 import {Resolver} from './components/Resolver/Resolver';
+import '@openfin/desktop-ui/ui-styles.css';
 
-render(<Resolver />, document.getElementById('react-app'));
+ReactDOM.render(<ThemeProvider autoConnect updateBody><Resolver /></ThemeProvider>, document.getElementById('react-app'));
