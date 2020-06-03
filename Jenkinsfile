@@ -22,6 +22,9 @@ pipeline {
                 stage('Unit Tests') {
                     agent { label 'linux-slave' }
                     steps {
+                        withCredentials([string(credentialsId: "NPM_TOKEN_WRITE", variable: 'NPM_TOKEN')]) {
+                            sh "echo //registry.npmjs.org/:_authToken=$NPM_TOKEN > $WORKSPACE/.npmrc"
+                        }
                         sh "npm install"
                         sh "npm run test:unit -- --noColor -x \"--no-cache --verbose\""
                         sh "npm run check -- --noCache"
