@@ -22,10 +22,7 @@ pipeline {
                 stage('Unit Tests') {
                     agent { label 'linux-slave' }
                     steps {
-                        withCredentials([string(credentialsId: "NPM_TOKEN_WRITE", variable: 'NPM_TOKEN')]) {
-                            sh "echo //registry.npmjs.org/:_authToken=$NPM_TOKEN > $WORKSPACE/.npmrc"
-                        }
-                        sh "npm install"
+                        install()
                         sh "npm run test:unit -- --noColor -x \"--no-cache --verbose\""
                         sh "npm run check -- --noCache"
                     }
@@ -39,10 +36,7 @@ pipeline {
                 stage('Integration Tests') {
                     agent { label 'win10-dservices' }
                     steps {
-                        withCredentials([string(credentialsId: "NPM_TOKEN_WRITE", variable: 'NPM_TOKEN')]) {
-                            bat "echo //registry.npmjs.org/:_authToken=$NPM_TOKEN > $WORKSPACE/.npmrc"
-                        }
-                        bat "npm install"
+                        install()
                         bat "npm run test:int -- --noColor -x \"--no-cache --verbose\""
                     }
                     post {
@@ -54,24 +48,48 @@ pipeline {
             }
         }
 
-        stage('Build') {
+        stage('Release') {
             agent { label 'linux-slave' }
-            steps {
-                configure()
+            stages {
+                stage('Install') {
+                    steps {
+                        install()
+                        configure()
+                    }
+                }
 
-                buildProject()
-                addReleaseChannels()
+                stage('Build') {
+                    steps {
+                        buildProject()
+                        addReleaseChannels()
+                    }
+                }
+
+                stage('Deploy') {
+                    when { anyOf { branch 'develop' ; branch 'master' ; not { environment name: 'PROJECT', value: '' } } }
+                    steps {
+                        deployToS3()
+                        deployToNPM()
+                    }
+                }
             }
         }
+    }
+}
 
-        stage('Deploy') {
-            agent { label 'linux-slave' }
-            when { anyOf { branch 'develop' ; branch 'master' } }
-            steps {
-                deployToS3()
-                deployToNPM()
-            }
+def install() {
+    withCredentials([string(credentialsId: "NPM_TOKEN_WRITE", variable: 'NPM_TOKEN')]) {
+        if (isUnix()) {
+            sh "echo //registry.npmjs.org/:_authToken=$NPM_TOKEN > $WORKSPACE/.npmrc"
+        } else {
+            bat "echo //registry.npmjs.org/:_authToken=$NPM_TOKEN > $WORKSPACE/.npmrc"
         }
+    }
+
+    if (isUnix()) {
+        sh "npm ci"
+    } else {
+        bat "npm ci"
     }
 }
 
@@ -81,34 +99,45 @@ def configure() {
 
     GIT_SHORT_SHA = GIT_COMMIT.substring(0, 7)
     PKG_VERSION = manifest.version
+    METADATA = env.METADATA?.replaceAll(/[. \/#]/, '-')?.toLowerCase()
+    TIMESTAMP = new Date().format("yyyyMMdd.HHmmss", TimeZone.getTimeZone('UTC'))
     SERVICE_NAME = config.NAME
 
-    if (env.BRANCH_NAME == 'master') {
+    if (METADATA) {
+        BUILD_VERSION = "${PKG_VERSION}-custom.${TIMESTAMP}+${METADATA.replaceAll('-', '.')}"
+        MANIFEST_NAME = "tags/${METADATA}.json"
+        CHANNEL = null
+    } else if (env.PROJECT) {
+        BUILD_VERSION = "${PKG_VERSION}-custom.${TIMESTAMP}"
+        MANIFEST_NAME = null
+        CHANNEL = null
+    } else if (env.BRANCH_NAME == 'master') {
         BUILD_VERSION = PKG_VERSION
-        CHANNEL = 'stable'
         MANIFEST_NAME = 'app.json'
+        CHANNEL = 'stable'
     } else {
-        BUILD_VERSION = PKG_VERSION + '-alpha.' + env.BUILD_NUMBER
-        CHANNEL = 'staging'
+        BUILD_VERSION = "${PKG_VERSION}-alpha.${env.BUILD_NUMBER}"
         MANIFEST_NAME = 'app.staging.json'
+        CHANNEL = 'staging'
     }
 
-    DIR_BUILD_ROOT = env.DSERVICE_S3_ROOT + SERVICE_NAME + '/'
-    DIR_BUILD_VERSION = DIR_BUILD_ROOT + BUILD_VERSION
+    // Local directory paths
+    DIR_LOCAL_RES = './res/provider/'
+    DIR_LOCAL_DIST = './dist/provider/'
+    DIR_LOCAL_DOCS = './dist/docs/'
 
-    DIR_DOCS_ROOT = env.DSERVICE_S3_ROOT_DOCS + SERVICE_NAME + '/'
-    DIR_DOCS_CHANNEL = DIR_DOCS_ROOT + CHANNEL
-    DIR_DOCS_VERSION = DIR_DOCS_ROOT + BUILD_VERSION
+    // CDN directory paths
+    DIR_CDN_BUILD_ROOT = env.DSERVICE_S3_ROOT + SERVICE_NAME + '/'
+    DIR_CDN_BUILD_VERSION = DIR_CDN_BUILD_ROOT + BUILD_VERSION
+    DIR_CDN_DOCS_ROOT = env.DSERVICE_S3_ROOT_DOCS + SERVICE_NAME + '/'
+    DIR_CDN_DOCS_CHANNEL = DIR_CDN_DOCS_ROOT + CHANNEL
+    DIR_CDN_DOCS_VERSION = DIR_CDN_DOCS_ROOT + BUILD_VERSION
 }
 
 def buildProject() {
-    withCredentials([string(credentialsId: "NPM_TOKEN_WRITE", variable: 'NPM_TOKEN')]) {
-        sh "echo //registry.npmjs.org/:_authToken=$NPM_TOKEN > $WORKSPACE/.npmrc"
-    }
-    sh "npm install"
     sh "npm run clean"
     sh "VERSION=${BUILD_VERSION} npm run build"
-    sh "echo ${GIT_SHORT_SHA} > ./dist/SHA.txt"
+    sh "echo ${GIT_SHORT_SHA} > ${DIR_LOCAL_DIST}SHA.txt"
 
     sh "npm run zip"
     sh "npm install bootprint@2.0.1 bootprint-json-schema@2.0.0-rc.3 --no-save"
@@ -122,19 +151,27 @@ def addReleaseChannels() {
 }
 
 def deployToS3() {
-    sh "aws s3 cp ./res/provider ${DIR_BUILD_VERSION}/ --recursive"
-    sh "aws s3 cp ./dist/provider ${DIR_BUILD_VERSION}/ --recursive"
-    sh "aws s3 cp ./dist/client/openfin-${SERVICE_NAME}.js ${DIR_BUILD_VERSION}/"
+    if (env.ALLOW_CDN != 'false') {
+        sh "aws s3 cp ${DIR_LOCAL_RES} ${DIR_CDN_BUILD_VERSION}/ --recursive --exclude \"*.svg\""
+        sh "aws s3 cp ${DIR_LOCAL_RES} ${DIR_CDN_BUILD_VERSION}/ --recursive --exclude \"*\" --include \"*.svg\" --content-type \"image/svg+xml\""
+        sh "aws s3 cp ${DIR_LOCAL_DIST} ${DIR_CDN_BUILD_VERSION}/ --recursive --exclude \"*.svg\""
+        sh "aws s3 cp ${DIR_LOCAL_DIST} ${DIR_CDN_BUILD_VERSION}/ --recursive --exclude \"*\" --include \"*.svg\" --content-type \"image/svg+xml\""
+        sh "aws s3 cp ./dist/client/openfin-${SERVICE_NAME}.js ${DIR_CDN_BUILD_VERSION}/"
 
-    sh "aws s3 cp ./dist/docs ${DIR_DOCS_CHANNEL} --recursive"
-    sh "aws s3 cp ./dist/docs ${DIR_DOCS_VERSION} --recursive"
+        if (!env.PROJECT) {
+            sh "aws s3 cp ${DIR_LOCAL_DOCS} ${DIR_CDN_DOCS_CHANNEL} --recursive"
+            sh "aws s3 cp ${DIR_LOCAL_DOCS} ${DIR_CDN_DOCS_VERSION} --recursive"
+        }
 
-    sh "aws s3 cp ./dist/provider/app.json ${DIR_BUILD_ROOT}${MANIFEST_NAME}"
-    sh "aws s3 cp ./dist/provider/ ${DIR_BUILD_ROOT} --recursive --exclude \"*\" --include \"app.runtime-*.json\""
+        if (MANIFEST_NAME) {
+            sh "aws s3 cp ${DIR_LOCAL_DIST}app.json ${DIR_CDN_BUILD_ROOT}${MANIFEST_NAME}"
+            sh "aws s3 cp ${DIR_LOCAL_DIST} ${DIR_CDN_BUILD_ROOT} --exclude \"*\" --include \"app.runtime-*.json\""
+        }
+    }
 }
 
 def deployToNPM() {
-    if (env.DEPLOY_CLIENT != 'No') {
+    if (env.ALLOW_NPM != 'false' && env.DEPLOY_CLIENT != 'No') {
         withCredentials([string(credentialsId: 'NPM_TOKEN_WRITE', variable: 'NPM_TOKEN')]) {
             sh "echo //registry.npmjs.org/:_authToken=$NPM_TOKEN > $WORKSPACE/.npmrc"
         }
@@ -143,11 +180,17 @@ def deployToNPM() {
             // Assume production release
             echo "publishing to npm, version: ${BUILD_VERSION}"
             sh "npm publish"
-        } else {
+        } else if (!env.PROJECT) {
             // Assume staging release, and tag as 'alpha'
             echo "publishing pre-release version to npm: ${BUILD_VERSION}"
             sh "npm version --no-git-tag-version ${BUILD_VERSION}"
             sh "npm publish --tag alpha"
+            sh "npm version --no-git-tag-version ${PKG_VERSION}"
+        } else {
+            // Tag as 'custom', to not interfere with alpha/latest tags
+            echo "publishing pre-release version to npm: ${BUILD_VERSION}"
+            sh "npm version --no-git-tag-version ${BUILD_VERSION}"
+            sh "npm publish --tag custom"
             sh "npm version --no-git-tag-version ${PKG_VERSION}"
         }
     }
