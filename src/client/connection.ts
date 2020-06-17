@@ -15,9 +15,8 @@ import {EventEmitter} from 'events';
 
 import {DeferredPromise} from 'openfin-service-async';
 import {ChannelClient} from 'openfin/_v2/api/interappbus/channel/client';
-import {RuntimeInfo} from 'openfin/_v2/api/system/runtime-info';
 
-import {APIFromClientTopic, getServiceChannel, setServiceChannel, getServiceIdentity, setServiceIdentity, APIFromClient, deserializeError, Events, onReconnect} from './internal';
+import {APIFromClientTopic, getServiceChannel, getServiceIdentity, setServiceIdentity, APIFromClient, deserializeError, Events, onReconnect} from './internal';
 import {EventRouter} from './EventRouter';
 
 /**
@@ -45,32 +44,29 @@ export function getEventRouter(): EventRouter<Events> {
  * Promise to the channel object that allows us to connect to the client
  */
 let channelPromise: Promise<ChannelClient> | null = null;
-const hasDOMContentLoaded = new DeferredPromise<void>();
+const environmentInitialized = new DeferredPromise<void>();
 let hasDisconnectListener = false;
 let reconnect = false;
 
 if (typeof fin !== 'undefined') {
-    getServicePromise();
-
-    window.addEventListener('DOMContentLoaded', () => {
-        hasDOMContentLoaded.resolve();
+    fin.desktop.main(() => {
+        environmentInitialized.resolve();
     });
+
+    getServicePromise();
+} else {
+    environmentInitialized.resolve();
 }
 
 export async function getServicePromise(): Promise<ChannelClient> {
-    await hasDOMContentLoaded.promise;
+    await environmentInitialized.promise;
     if (!channelPromise) {
         if (typeof fin === 'undefined') {
             channelPromise = Promise.reject(new Error('fin is not defined. The openfin-fdc3 module is only intended for use in an OpenFin application.'));
         } else {
             channelPromise = new Promise<ChannelClient>(async (resolve, reject) => {
-                // TODO: just use RuntimeInfo once its type is updated from js v2 API
-                const info: RuntimeInfo & {fdc3AppUuid?: string; fdc3ChannelName?: string} = await fin.System.getRuntimeInfo();
+                await setServiceIdentity();
 
-                if (info.fdc3AppUuid && info.fdc3ChannelName) {
-                    setServiceIdentity(info.fdc3AppUuid);
-                    setServiceChannel(info.fdc3ChannelName);
-                }
                 // @ts-ignore fin.me has no type def
                 const {name, uuid} = fin.me?.identity ?? fin.Window.me;
                 if (uuid === getServiceIdentity().uuid && name === getServiceIdentity().name) {
