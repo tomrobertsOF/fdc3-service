@@ -152,6 +152,10 @@ def addReleaseChannels() {
 
 def deployToS3() {
     if (env.ALLOW_CDN != 'false') {
+        PATHS_TO_INVALIDATE = []
+
+        assert sh(script: "aws s3 ls ${DIR_CDN_BUILD_VERSION}/ --summarize", returnStdout: true).contains("Total Objects: 0")
+
         sh "aws s3 cp ${DIR_LOCAL_RES} ${DIR_CDN_BUILD_VERSION}/ --recursive --exclude \"*.svg\""
         sh "aws s3 cp ${DIR_LOCAL_RES} ${DIR_CDN_BUILD_VERSION}/ --recursive --exclude \"*\" --include \"*.svg\" --content-type \"image/svg+xml\""
         sh "aws s3 cp ${DIR_LOCAL_DIST} ${DIR_CDN_BUILD_VERSION}/ --recursive --exclude \"*.svg\""
@@ -161,12 +165,16 @@ def deployToS3() {
         if (!env.PROJECT) {
             sh "aws s3 cp ${DIR_LOCAL_DOCS} ${DIR_CDN_DOCS_CHANNEL} --recursive"
             sh "aws s3 cp ${DIR_LOCAL_DOCS} ${DIR_CDN_DOCS_VERSION} --recursive"
+            PATHS_TO_INVALIDATE << DIR_CDN_DOCS_CHANNEL
         }
 
         if (MANIFEST_NAME) {
             sh "aws s3 cp ${DIR_LOCAL_DIST}app.json ${DIR_CDN_BUILD_ROOT}${MANIFEST_NAME}"
             sh "aws s3 cp ${DIR_LOCAL_DIST} ${DIR_CDN_BUILD_ROOT} --exclude \"*\" --include \"app.runtime-*.json\""
+            PATHS_TO_INVALIDATE << "${DIR_CDN_BUILD_ROOT}${MANIFEST_NAME}"
         }
+
+        invalidateCache(PATHS_TO_INVALIDATE)
     }
 }
 
@@ -193,5 +201,14 @@ def deployToNPM() {
             sh "npm publish --tag custom"
             sh "npm version --no-git-tag-version ${PKG_VERSION}"
         }
+    }
+}
+
+def invalidateCache(PATHS) {
+    if (!PATHS.isEmpty()) {
+        BATCH = "Paths={Quantity=${PATHS.size()},Items=[${PATHS.collect { it.replace(env.CDN_S3_ROOT, "/") }.join(",")}]},CallerReference=${SERVICE_NAME}-${BUILD_VERSION}"
+        CMD = "aws cloudfront create-invalidation --distribution-id ${env.CDN_S3_DISTRIBUTION_ID} --invalidation-batch \"${BATCH}\""
+        INVALIDATION_ID = readJSON(text: sh(script: CMD, returnStdout: true)).Invalidation.Id
+        sh "aws cloudfront wait invalidation-completed --distribution-id ${env.CDN_S3_DISTRIBUTION_ID} --id ${INVALIDATION_ID}"
     }
 }
