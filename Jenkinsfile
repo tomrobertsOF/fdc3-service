@@ -154,7 +154,7 @@ def deployToS3() {
     if (env.ALLOW_CDN != 'false') {
         PATHS_TO_INVALIDATE = []
 
-        assert sh(script: "aws s3 ls ${DIR_CDN_BUILD_VERSION}/ --summarize", returnStdout: true).contains("Total Objects: 0")
+        assert sh(script: "aws s3 ls ${DIR_CDN_BUILD_VERSION}/", returnStatus: true) == 1 : "Build ${BUILD_VERSION} already exists on CDN"
 
         sh "aws s3 cp ${DIR_LOCAL_RES} ${DIR_CDN_BUILD_VERSION}/ --recursive --exclude \"*.svg\""
         sh "aws s3 cp ${DIR_LOCAL_RES} ${DIR_CDN_BUILD_VERSION}/ --recursive --exclude \"*\" --include \"*.svg\" --content-type \"image/svg+xml\""
