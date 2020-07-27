@@ -80,6 +80,16 @@ export async function getServicePromise(): Promise<ChannelClient> {
                         }
                     }, 5000);
 
+                    // Wait for the channel provider to exist, polling every 1/2 second for up to 10 seconds, before attempting to connect.
+                    // Workaround for a runtime bug where the connection hangs in some situations if the provider doesn't exist yet. [RUN-6415]
+                    let currentChannels = await fin.InterApplicationBus.Channel.getAllChannels();
+                    let attempts = 0;
+                    while (!(currentChannels.some((activeChannel) => activeChannel.channelName === getServiceChannel())) && attempts < 20) {
+                        attempts++;
+                        await new Promise((res) => setTimeout(res, 500));
+                        currentChannels = await fin.InterApplicationBus.Channel.getAllChannels();
+                    }
+
                     channel = await fin.InterApplicationBus.Channel.connect(getServiceChannel(), {
                         wait: true,
                         payload: {version: PACKAGE_VERSION}
